@@ -415,12 +415,8 @@ class ModuleInstance:
             self.exports.append(exportinst)
 
 
-def hostfunc_call(
-    _: ModuleInstance,
-    address: int,
-    store: Store,
-    stack: Stack,
-):
+def hostfunc_call(module: ModuleInstance, address: int, store: Store, stack: Stack) -> typing.List[Value]:
+    _ = module
     f: HostFunc = store.funcs[address]
     valn = [stack.pop() for _ in f.functype.args][::-1]
     r = f.hostcode(*[e.n for e in valn])
@@ -429,12 +425,7 @@ def hostfunc_call(
     return []
 
 
-def wasmfunc_call(
-    module: ModuleInstance,
-    address: int,
-    store: Store,
-    stack: Stack,
-):
+def wasmfunc_call(module: ModuleInstance, address: int, store: Store, stack: Stack) -> typing.List[Value]:
     f: WasmFunc = store.funcs[address]
     code = f.code.expr.data
     valn = [stack.pop() for _ in f.functype.args][::-1]
@@ -496,12 +487,7 @@ def spec_br(l: int, stack: Stack) -> int:
     return L.continuation - 1
 
 
-def exec_expr(
-    store: Store,
-    frame: Frame,
-    stack: Stack,
-    expr: structure.Expression,
-):
+def exec_expr(store: Store, frame: Frame, stack: Stack, expr: structure.Expression) -> typing.List[Value]:
     module = frame.module
     if not expr.data:
         raise Exception('pywasm: empty init expr')
