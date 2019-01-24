@@ -547,14 +547,17 @@ def exec_expr(
                 continue
             if opcode == convention.end:
                 # label{instr∗} val* end -> val*
-                if stack.status() == Label:
+                status = stack.status()
+                assert status in [Label, Frame]
+                if status == Label:
                     for i in range(len(stack.data)):
                         i = -1 - i
                         if isinstance(stack.data[i], Label):
                             del stack.data[i]
                             break
                     continue
-                break
+                if status == Frame:
+                    break
             if opcode == convention.br:
                 pc = spec_br(i.immediate_arguments, stack)
                 continue
