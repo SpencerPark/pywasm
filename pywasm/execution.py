@@ -450,12 +450,7 @@ def wasmfunc_call(module: ModuleInstance, address: int, store: Store, stack: Sta
     return r
 
 
-def call(
-    module: ModuleInstance,
-    address: int,
-    store: Store,
-    stack: Stack,
-):
+def call(module: ModuleInstance, address: int, store: Store, stack: Stack) -> typing.List[Value]:
     f = store.funcs[address]
     assert len(f.functype.rets) <= 1
     for i, t in enumerate(f.functype.args[::-1]):
