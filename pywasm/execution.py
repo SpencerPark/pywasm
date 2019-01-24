@@ -338,18 +338,18 @@ class ModuleInstance:
         auxmod.globaladdrs = [e.addr for e in externvals if e.extern_type == convention.extern_global]
         stack = Stack()
         frame = Frame(auxmod, [], 1, -1)
+        stack.add(frame)
         vals = []
         for glob in module.globals:
-            stack.add(frame)
             v = exec_expr(store, frame, stack, glob.expr)[0]
             vals.append(v)
         # Allocation
         self.allocate(module, store, externvals, vals)
 
         frame = Frame(self, [], 1, -1)
+        stack.add(frame)
         # For each element segment in module.elem, do:
         for e in module.elem:
-            stack.add(frame)
             offset = exec_expr(store, frame, stack, e.expr)[0]
             assert offset.valtype == convention.i32
             t = store.tables[self.tableaddrs[e.tableidx]]
@@ -357,13 +357,14 @@ class ModuleInstance:
                 t.elem[offset.n + i] = e
         # For each data segment in module.data, do:
         for e in module.data:
-            stack.add(frame)
             offset = exec_expr(store, frame, stack, e.expr)[0]
             assert offset.valtype == convention.i32
             m = store.mems[self.memaddrs[e.memidx]]
             end = offset.n + len(e.init)
             assert end <= len(m.data)
             m.data[offset.n: offset.n + len(e.init)] = e.init
+        # Assert: due to validation, the frame F is now on the top of the stack
+        assert isinstance(stack.pop(), Frame)
         # If the start function module.start is not empty, invoke the function instance
         if module.start is not None:
             call(module, module.start, store, stack)
@@ -424,7 +425,8 @@ def hostfunc_call(
     valn = [stack.pop() for _ in f.functype.args][::-1]
     r = f.hostcode(*[e.n for e in valn])
     if r:
-        stack.add(Value(f.functype.rets[0], r))
+        return [Value(f.functype.rets[0], r)]
+    return []
 
 
 def wasmfunc_call(
@@ -450,14 +452,11 @@ def wasmfunc_call(
     stack.add(frame)
     stack.add(Label(len(f.functype.rets), len(code)))
     # An expression is evaluated relative to a current frame pointing to its containing module instance.
-    exec_expr(store, frame, stack, f.code.expr)
+    r = exec_expr(store, frame, stack, f.code.expr)
     # Exit
-    if not isinstance(stack.data[-1 - frame.arity], Frame):
+    if not isinstance(stack.pop(), Frame):
         raise Exception('pywasm: signature mismatch in call')
-    del stack.data[-1 - frame.arity]
-    if frame.arity > 0:
-        return stack.data[-frame.arity:]
-    return []
+    return r
 
 
 def call(
@@ -555,11 +554,7 @@ def exec_expr(
                             del stack.data[i]
                             break
                     continue
-                # frame{F} val* end -> val*
-                v = [stack.pop() for _ in range(frame.arity)][::-1]
-                assert isinstance(stack.pop(), Frame)
-                stack.ext(v)
-                continue
+                break
             if opcode == convention.br:
                 pc = spec_br(i.immediate_arguments, stack)
                 continue
@@ -586,7 +581,8 @@ def exec_expr(
                 stack.ext(v)
                 break
             if opcode == convention.call:
-                call(module, module.funcaddrs[i.immediate_arguments], store, stack)
+                r = call(module, module.funcaddrs[i.immediate_arguments], store, stack)
+                stack.ext(r)
                 continue
             if opcode == convention.call_indirect:
                 if i.immediate_arguments[1] != 0x00:
@@ -595,7 +591,8 @@ def exec_expr(
                 tab = store.tables[module.tableaddrs[0]]
                 if not 0 <= idx < len(tab.elem):
                     raise Exception('pywasm: undefined element index')
-                call(module, tab.elem[idx], store, stack)
+                r = call(module, tab.elem[idx], store, stack)
+                stack.ext(r)
                 continue
             continue
         if opcode == convention.drop:
@@ -1232,4 +1229,4 @@ def exec_expr(
                 continue
             continue
 
-    return stack.data[-frame.arity:]
+    return [stack.pop() for _ in range(frame.arity)][::-1]
