@@ -341,7 +341,7 @@ class ModuleInstance:
         stack.add(frame)
         vals = []
         for i, glob in enumerate(module.globals):
-            log.debugln(f'Init Global[{i}]:')
+            log.debugln(f'Global[{i}]:')
             v = exec_expr(store, frame, stack, glob.expr)[0]
             log.debugln()
             vals.append(v)
@@ -352,14 +352,18 @@ class ModuleInstance:
         stack.add(frame)
         # For each element segment in module.elem, do:
         for i, e in enumerate(module.elem):
+            log.debugln(f'ElementSegment[{i}]:')
             offset = exec_expr(store, frame, stack, e.expr)[0]
+            log.debugln()
             assert offset.valtype == convention.i32
             t = store.tables[self.tableaddrs[e.tableidx]]
             for i, e in enumerate(e.init):
                 t.elem[offset.n + i] = e
         # For each data segment in module.data, do:
-        for e in module.data:
+        for i, e in enumerate(module.data):
+            log.debugln(f'Data[{i}]:')
             offset = exec_expr(store, frame, stack, e.expr)[0]
+            log.debugln()
             assert offset.valtype == convention.i32
             m = store.mems[self.memaddrs[e.memidx]]
             end = offset.n + len(e.init)
