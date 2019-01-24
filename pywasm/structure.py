@@ -110,8 +110,8 @@ class GlobalType:
 
     def __repr__(self):
         if self.mut:
-            return f'var {convention.valtype[self.valtype]}'
-        return f'const {convention.valtype[self.valtype]}'
+            return f'var {convention.valtype[self.valtype][0]}'
+        return f'const {convention.valtype[self.valtype][0]}'
 
     @classmethod
     def from_reader(cls, r: typing.BinaryIO):
@@ -350,7 +350,7 @@ class Global:
         self.expr: Expression
 
     def __repr__(self):
-        return f'{self.globaltype} expr={self.expr}>'
+        return f'{self.globaltype}'
 
     @classmethod
     def from_reader(cls, r: typing.BinaryIO):
