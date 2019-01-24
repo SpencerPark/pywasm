@@ -340,8 +340,10 @@ class ModuleInstance:
         frame = Frame(auxmod, [], 1, -1)
         stack.add(frame)
         vals = []
-        for glob in module.globals:
+        for i, glob in enumerate(module.globals):
+            log.debugln(f'Init Global[{i}]:')
             v = exec_expr(store, frame, stack, glob.expr)[0]
+            log.debugln()
             vals.append(v)
         # Allocation
         self.allocate(module, store, externvals, vals)
@@ -349,7 +351,7 @@ class ModuleInstance:
         frame = Frame(self, [], 1, -1)
         stack.add(frame)
         # For each element segment in module.elem, do:
-        for e in module.elem:
+        for i, e in enumerate(module.elem):
             offset = exec_expr(store, frame, stack, e.expr)[0]
             assert offset.valtype == convention.i32
             t = store.tables[self.tableaddrs[e.tableidx]]
