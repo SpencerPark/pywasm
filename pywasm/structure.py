@@ -372,6 +372,9 @@ class ElementSegment:
         self.expr: Expression
         self.init: typing.List[int]
 
+    def __repr__(self):
+        return f'...'
+
     @classmethod
     def from_reader(cls, r: typing.BinaryIO):
         o = ElementSegment()
@@ -395,7 +398,7 @@ class DataSegment:
         self.init: bytearray
 
     def __repr__(self):
-        return self.init[:32].decode()
+        return '...'
 
     @classmethod
     def from_reader(cls, r: typing.BinaryIO):
