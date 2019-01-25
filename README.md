@@ -6,6 +6,8 @@ A WebAssembly interpreter written in pure Python. JIT used.
 
 Current specification wasm version is: [WebAssembly Core Specification W3C Working Draft, 4 September 2018](https://www.w3.org/TR/2018/WD-wasm-core-1-20180904/). Just like Firefox or Chrome does.
 
+NOTE: pywasm requires Python >= 3.6.x.
+
 # Installation
 
 ```sh
